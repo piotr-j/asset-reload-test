@@ -1,0 +1,90 @@
+
+assets.png
+size: 512,512
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+badlogic
+  rotate: false
+  xy: 1, 167
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+goon-male-e
+  rotate: false
+  xy: 259, 294
+  size: 30, 59
+  orig: 64, 64
+  offset: 17, 2
+  index: -1
+goon-male-n
+  rotate: false
+  xy: 340, 364
+  size: 30, 59
+  orig: 64, 64
+  offset: 17, 2
+  index: -1
+goon-male-s
+  rotate: false
+  xy: 99, 40
+  size: 30, 59
+  orig: 64, 64
+  offset: 17, 2
+  index: -1
+goon-male-w
+  rotate: false
+  xy: 165, 106
+  size: 30, 59
+  orig: 64, 64
+  offset: 17, 2
+  index: -1
+not-found
+  rotate: false
+  xy: 99, 101
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+metal
+  rotate: false
+  xy: 291, 315
+  size: 37, 38
+  orig: 64, 64
+  offset: 14, 13
+  index: -1
+rock
+  rotate: false
+  xy: 259, 355
+  size: 79, 68
+  orig: 80, 72
+  offset: 1, 0
+  index: -1
+stone
+  rotate: false
+  xy: 372, 388
+  size: 49, 35
+  orig: 64, 64
+  offset: 6, 9
+  index: -1
+tree
+  rotate: false
+  xy: 1, 21
+  size: 96, 144
+  orig: 96, 144
+  offset: 0, 0
+  index: -1
+wood
+  rotate: false
+  xy: 1, 1
+  size: 60, 18
+  orig: 64, 64
+  offset: 2, 23
+  index: -1
+roboto
+  rotate: false
+  xy: 1, 425
+  size: 508, 76
+  orig: 512, 512
+  offset: 0, 436
+  index: -1
