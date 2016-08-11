@@ -36,7 +36,7 @@ public class DesktopLauncher {
 			executor.dispose();
 		}
 
-		@Override public void start (final Listener listener, boolean watch) {
+		@Override public void start (final Listener listener, final boolean watch) {
 			this.listener = listener;
 			assetsProcessed = new Runnable() {
 				@Override public void run () {
@@ -104,7 +104,7 @@ public class DesktopLauncher {
 			Path cwd = Paths.get(System.getProperty("user.dir"));
 			// if we are in android/assets, we will assume that we are running from ide
 			if (cwd.getFileName().toString().equals("assets") && cwd.getParent().getFileName().toString().equals("android")) {
-				Path assets = cwd.resolve("raw");
+				Path assets = cwd.resolve("raw/atlas");
 				try {
 					deletePath(assets);
 					Files.createDirectory(assets);
@@ -121,7 +121,7 @@ public class DesktopLauncher {
 					Gdx.app.error(TAG, "", e);
 					return;
 				}
-				Path raw = cwd.getParent().getParent().resolve("raw-assets");
+				Path raw = cwd.getParent().getParent().resolve("raw-assets/atlas");
 				if (!Files.exists(assets)) {
 					Gdx.app.error(TAG, "raw-assets doesn't exists! " + raw);
 					return;
@@ -130,6 +130,11 @@ public class DesktopLauncher {
 					FileVisitor visitor = new FileVisitor(raw, assets);
 					Files.walkFileTree(raw, visitor);
 					TexturePacker.process(assets.toAbsolutePath().toString(), atlasses.toAbsolutePath().toString(), "assets");
+
+					assets = cwd.resolve("particles");
+					raw = cwd.getParent().getParent().resolve("raw-assets/particles");
+					visitor = new FileVisitor(raw, assets);
+					Files.walkFileTree(raw, visitor);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

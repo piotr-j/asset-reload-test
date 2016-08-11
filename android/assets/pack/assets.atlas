@@ -46,6 +46,13 @@ not-found
   orig: 64, 64
   offset: 0, 0
   index: -1
+particle
+  rotate: false
+  xy: 131, 68
+  size: 32, 31
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
 metal
   rotate: false
   xy: 291, 315
