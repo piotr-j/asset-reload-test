@@ -46,16 +46,25 @@ public class AssetsGame extends ApplicationAdapter implements InputProcessor {
 		Assets.Asset asset = edit.create(Assets.Asset.class);
 		asset.path = "badlogic";
 		asset.type = TextureRegion.class;
+		Renderer.Renderable renderable = edit.create(Renderer.Renderable.class);
+		renderable.x = 400 - 128;
+		renderable.y = 300 - 128;
 
 		edit = world.createEntity().edit();
 		asset = edit.create(Assets.Asset.class);
 		asset.path = "tree";
 		asset.type = TextureRegion.class;
+		renderable = edit.create(Renderer.Renderable.class);
+		renderable.x = 100;
+		renderable.y = 100;
 
 		edit = world.createEntity().edit();
 		asset = edit.create(Assets.Asset.class);
 		asset.path = "particles/test.p";
 		asset.type = ParticleEffect.class;
+		renderable = edit.create(Renderer.Renderable.class);
+		renderable.x = 600;
+		renderable.y = 450;
 	}
 
 	@Override
@@ -199,8 +208,8 @@ public class AssetsGame extends ApplicationAdapter implements InputProcessor {
 			public TextureRegion region;
 			public ParticleEffect effect;
 			public float progress;
-			public float x = MathUtils.random(50, 300);
-			public float y = MathUtils.random(50, 300);
+			public float x;
+			public float y;
 			public float angle;
 			public int dir = 1;
 		}
