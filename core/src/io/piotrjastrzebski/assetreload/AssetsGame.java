@@ -15,6 +15,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.utils.Array;
 
 public class AssetsGame extends ApplicationAdapter implements InputProcessor {
 	private static final String TAG = AssetsGame.class.getSimpleName();
@@ -86,7 +87,7 @@ public class AssetsGame extends ApplicationAdapter implements InputProcessor {
 	public static class Assets extends BaseEntitySystem implements Platform.Listener {
 		protected ComponentMapper<Asset> mAsset;
 		protected ComponentMapper<Renderer.Renderable> mRenderable;
-		AMWrapper current;
+		AssetManagers assetManager;
 		boolean loadInProgress = false;
 		AssetDescriptor<ParticleEffect> particleDesc;
 		ParticleEffect effect;
@@ -96,8 +97,7 @@ public class AssetsGame extends ApplicationAdapter implements InputProcessor {
 			platform.start(this, true);
 			platform.processAssetsAsync();
 			// this works, but we are leaking assets doing this
-			current = new AMWrapper();
-
+			assetManager = new AssetManagers();
 			ParticleEffectLoader.ParticleEffectParameter params = new ParticleEffectLoader.ParticleEffectParameter();
 			params.atlasFile = ATLAS_NAME;
 			particleDesc = new AssetDescriptor<>("particles/test.p", ParticleEffect.class, params);
@@ -131,10 +131,22 @@ public class AssetsGame extends ApplicationAdapter implements InputProcessor {
 
 		@Override protected void processSystem () {
 			if (loadInProgress) {
-				if (current.update()) {
+				if (assetManager.update()) {
 					loadInProgress = false;
-					atlas = current.get(atlasDescriptor);
-					effect = current.get(particleDesc);
+				}
+			}
+		}
+
+		private TextureAtlas atlas;
+		@Override public void assetsProcessed () {
+			if (loadInProgress) throw new AssertionError("Asset reload before old ones loaded!");
+			loadInProgress = true;
+			assetManager.load(atlasDescriptor);
+			assetManager.load(particleDesc);
+			assetManager.listener = new AssetManagers.Listener() {
+				@Override public void onReload (Array<AssetDescriptor> reloaded) {
+					atlas = assetManager.get(atlasDescriptor);
+					effect = assetManager.get(particleDesc);
 					ParticleEmitter first = effect.getEmitters().first();
 					first.setContinuous(true);
 					first.getScale().setHigh(24, 48);
@@ -144,15 +156,7 @@ public class AssetsGame extends ApplicationAdapter implements InputProcessor {
 					first.setAdditive(true);
 					updateAllAssets();
 				}
-			}
-		}
-
-		private TextureAtlas atlas;
-		@Override public void assetsProcessed () {
-			if (loadInProgress) throw new AssertionError("Asset reload before old ones loaded!");
-			loadInProgress = true;
-			current.reload(atlasDescriptor);
-			current.reload(particleDesc);
+			};
 		}
 
 		public static class Asset extends Component {
@@ -161,7 +165,7 @@ public class AssetsGame extends ApplicationAdapter implements InputProcessor {
 		}
 
 		@Override protected void dispose () {
-			current.dispose();
+			assetManager.dispose();
 //			descToNext.dispose();
 		}
 	}
