@@ -139,46 +139,34 @@ public class AssetsGame extends ApplicationAdapter implements InputProcessor {
 			if (loadInProgress) throw new AssertionError("Asset reload before old ones loaded!");
 			Gdx.app.log(TAG, "Processing " + type);
 			loadInProgress = true;
+			assetManager.listener = new AssetManagers.Listener() {
+				@Override public void onReload (Array<AssetDescriptor> reloaded) {
+					for (AssetDescriptor descriptor : reloaded) {
+						if (descriptor == atlasDescriptor) {
+							atlas = assetManager.get(atlasDescriptor);
+							updateAllAssets("atlas");
+						} else if (descriptor == particleDesc) {
+							atlas = assetManager.get(atlasDescriptor);
+							effect = assetManager.get(particleDesc);
+							ParticleEmitter first = effect.getEmitters().first();
+							first.setContinuous(true);
+							first.getScale().setHigh(24, 48);
+							first.getScale().setLow(8, 16);
+							first.getVelocity().setHigh(64, 128);
+							first.getVelocity().setLow(48, 96);
+//								first.setAdditive(true);
+							updateAllAssets("particle");
+						}
+					}
+				}
+			};
 			if (type.equals("atlas")) {
 				assetManager.load(atlasDescriptor);
-				assetManager.listener = new AssetManagers.Listener() {
-					@Override public void onReload (Array<AssetDescriptor> reloaded) {
-						atlas = assetManager.get(atlasDescriptor);
-						updateAllAssets(type);
-					}
-				};
 			} else if (type.equals("particle")) {
 				assetManager.load(particleDesc);
-				assetManager.listener = new AssetManagers.Listener() {
-					@Override public void onReload (Array<AssetDescriptor> reloaded) {
-						effect = assetManager.get(particleDesc);
-						ParticleEmitter first = effect.getEmitters().first();
-						first.setContinuous(true);
-						first.getScale().setHigh(24, 48);
-						first.getScale().setLow(8, 16);
-						first.getVelocity().setHigh(64, 128);
-						first.getVelocity().setLow(48, 96);
-						first.setAdditive(true);
-						updateAllAssets(type);
-					}
-				};
 			} else {
 				assetManager.load(atlasDescriptor);
 				assetManager.load(particleDesc);
-				assetManager.listener = new AssetManagers.Listener() {
-					@Override public void onReload (Array<AssetDescriptor> reloaded) {
-						atlas = assetManager.get(atlasDescriptor);
-						effect = assetManager.get(particleDesc);
-						ParticleEmitter first = effect.getEmitters().first();
-						first.setContinuous(true);
-						first.getScale().setHigh(24, 48);
-						first.getScale().setLow(8, 16);
-						first.getVelocity().setHigh(64, 128);
-						first.getVelocity().setLow(48, 96);
-						first.setAdditive(true);
-						updateAllAssets(type);
-					}
-				};
 			}
 		}
 

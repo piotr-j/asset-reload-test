@@ -6,7 +6,10 @@ import com.badlogic.gdx.assets.AssetLoaderParameters;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.AssetLoader;
 import com.badlogic.gdx.assets.loaders.FileHandleResolver;
+import com.badlogic.gdx.assets.loaders.ParticleEffectLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
+import com.badlogic.gdx.graphics.g2d.ParticleEffect;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Logger;
 import com.badlogic.gdx.utils.ObjectMap;
@@ -20,6 +23,8 @@ public class AssetManagers {
 	AssetManager managerB;
 	ObjectMap<AssetDescriptor, AssetManager> descToCurrent = new ObjectMap<>();
 	ObjectMap<AssetDescriptor, AssetManager> descToNext = new ObjectMap<>();
+	ObjectMap<String, AssetDescriptor> descriptors = new ObjectMap<>();
+
 	Array<AssetDescriptor> reloading = new Array<>();
 
 	public AssetManagers () {
@@ -47,18 +52,60 @@ public class AssetManagers {
 
 	public <T> void load (AssetDescriptor<T> descriptor) {
 		if (reloading.contains(descriptor, true)) {
-			Gdx.app.error(TAG, "Duplicate reloading!");
+			Gdx.app.log(TAG, "Skip duplicate reload " + descriptor);
 			return;
 		}
+		reloading.add(descriptor);
+		Array<AssetDescriptor> loadAfter = new Array<>();
 		if (!descToCurrent.containsKey(descriptor)) {
 			descToCurrent.put(descriptor, managerA);
 			descToNext.put(descriptor, managerB);
+			descriptors.put(descriptor.fileName, descriptor);
 		} else {
-			// this is a reload
-			Gdx.app.log(TAG, "Reload " + descriptor);
+			AssetManager current = descToCurrent.get(descriptor);
+//			AssetManager next = descToNext.get(descriptor);
+			// super janky!
+			if (descriptor.type == ParticleEffect.class) {
+				Gdx.app.log(TAG, "Reload ParticleEffect " + descriptor);
+//				Gdx.app.log(TAG, "Reloading particle effect");
+				Array<String> dependencies = current.getDependencies(descriptor.fileName);
+				if (dependencies != null) {
+					for (String dependency : new Array<>(dependencies)) {
+						Class type = current.getAssetType(dependency);
+						if (current.isLoaded(dependency))
+							current.unload(dependency);
+						if (!descriptors.containsKey(dependency)) {
+							descriptors.put(dependency, new AssetDescriptor(dependency, type));
+						}
+						Gdx.app.log(TAG, "PRELOAD " + descriptors.get(dependency));
+						load(descriptors.get(dependency));
+					}
+				}
+			} else if (descriptor.type == TextureAtlas.class) {
+				Gdx.app.log(TAG, "Reload TextureAtlas " + descriptor);
+				// how do we know what depends on this? Go over all assets? kinda janky but eh
+				for (String name : current.getAssetNames()) {
+					Class assetType = current.getAssetType(name);
+					Array<String> dependencies = current.getDependencies(name);
+					if (dependencies != null) {
+						for (String dependency : new Array<>(dependencies)) {
+							if (dependency.equals(descriptor.fileName)) {
+								if (!descriptors.containsKey(name)) {
+									descriptors.put(name, new AssetDescriptor(name, assetType));
+								}
+								loadAfter.add(descriptors.get(name));
+							}
+						}
+					}
+				}
+			}
 		}
 		descToNext.get(descriptor).load(descriptor);
-		reloading.add(descriptor);
+		for (AssetDescriptor desc : loadAfter) {
+			Gdx.app.log(TAG, "POSTLOAD " + desc);
+			load(desc);
+		}
+		loadAfter.clear();
 	}
 
 	private static class UnloadTask {
@@ -79,9 +126,7 @@ public class AssetManagers {
 			for (AssetDescriptor desc : reloading) {
 				AssetManager current = descToCurrent.get(desc);
 				AssetManager next = descToNext.get(desc);
-				if (current.isLoaded(desc.fileName)) {
-					unloadQueue.add(new UnloadTask(current, desc.fileName));
-				}
+				unloadQueue.add(new UnloadTask(current, desc.fileName));
 				descToCurrent.put(desc, next);
 				descToNext.put(desc, current);
 			}
@@ -92,7 +137,9 @@ public class AssetManagers {
 			reloading.clear();
 			if (unloadQueue.size > 0) {
 				for (UnloadTask task : unloadQueue) {
-					task.manager.unload(task.fileName);
+					if (task.manager.isLoaded(task.fileName)) {
+						task.manager.unload(task.fileName);
+					}
 				}
 				unloadQueue.clear();
 			}
