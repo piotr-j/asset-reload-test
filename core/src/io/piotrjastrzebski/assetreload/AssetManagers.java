@@ -53,6 +53,9 @@ public class AssetManagers {
 		if (!descToCurrent.containsKey(descriptor)) {
 			descToCurrent.put(descriptor, managerA);
 			descToNext.put(descriptor, managerB);
+		} else {
+			// this is a reload
+			Gdx.app.log(TAG, "Reload " + descriptor);
 		}
 		descToNext.get(descriptor).load(descriptor);
 		reloading.add(descriptor);

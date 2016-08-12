@@ -28,7 +28,6 @@ public class DesktopLauncher {
 	private static class DesktopPlatform implements Platform {
 		private static final String TAG = DesktopPlatform.class.getSimpleName();
 		private Listener listener;
-		private Runnable assetsProcessed;
 		private AsyncExecutor executor;
 		private AtomicBoolean isProcessingAssets = new AtomicBoolean(false);
 		private Thread watcher;
@@ -40,11 +39,6 @@ public class DesktopLauncher {
 
 		@Override public void start (final Listener listener, final boolean watch) {
 			this.listener = listener;
-			assetsProcessed = new Runnable() {
-				@Override public void run () {
-					listener.assetsProcessed();
-				}
-			};
 			executor = new AsyncExecutor(1);
 
 			if (watch) {
@@ -63,7 +57,12 @@ public class DesktopLauncher {
 									// we don't really care about specific event type, if stuff happens repack all the things
 									// note: we get multiple events per change sometimes
 									if (ENTRY_CREATE == kind || ENTRY_MODIFY == kind || ENTRY_DELETE == kind) {
-										processAssetsAsync();
+										Path context = (Path)watchEvent.context();
+										if (context.toAbsolutePath().toString().contains("atlas")) {
+											processAssetsAsync("atlas");
+										} else {
+											processAssetsAsync("particle");
+										}
 									}
 								}
 
@@ -83,7 +82,7 @@ public class DesktopLauncher {
 			}
 		}
 
-		@Override public void processAssetsAsync () {
+		@Override public void processAssetsAsync (final String type) {
 			// submit only if there is nothing running
 			// not 100% sure this is correct
 			// this probably should be cancel previous one, start new
@@ -91,7 +90,7 @@ public class DesktopLauncher {
 			if (isProcessingAssets.compareAndSet(false, true)) {
 				executor.submit(new AsyncTask<Object>() {
 					@Override public Object call () throws Exception {
-						processAssets();
+						processAssets(type);
 						isProcessingAssets.set(false);
 						return null;
 					}
@@ -101,7 +100,7 @@ public class DesktopLauncher {
 			}
 		}
 
-		@Override public void processAssets () {
+		@Override public void processAssets (final String type) {
 			Gdx.app.log(TAG, "Processing assets...");
 			Path cwd = Paths.get(System.getProperty("user.dir"));
 			// if we are in android/assets, we will assume that we are running from ide
@@ -146,7 +145,11 @@ public class DesktopLauncher {
 			}
 
 			Gdx.app.log(TAG, "Processing assets finished");
-			Gdx.app.postRunnable(assetsProcessed);
+			Gdx.app.postRunnable(new Runnable() {
+				@Override public void run () {
+					listener.assetsProcessed(type);
+				}
+			});
 		}
 
 		private void deletePath (Path path) throws IOException {

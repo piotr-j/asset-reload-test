@@ -8,13 +8,10 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.assets.AssetDescriptor;
-import com.badlogic.gdx.assets.AssetLoaderParameters;
-import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.ParticleEffectLoader;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.math.Interpolation;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 
 public class AssetsGame extends ApplicationAdapter implements InputProcessor {
@@ -95,7 +92,7 @@ public class AssetsGame extends ApplicationAdapter implements InputProcessor {
 		public Assets (Platform platform) {
 			super(Aspect.all(Asset.class));
 			platform.start(this, true);
-			platform.processAssetsAsync();
+			platform.processAssetsAsync("");
 			// this works, but we are leaking assets doing this
 			assetManager = new AssetManagers();
 			ParticleEffectLoader.ParticleEffectParameter params = new ParticleEffectLoader.ParticleEffectParameter();
@@ -103,25 +100,25 @@ public class AssetsGame extends ApplicationAdapter implements InputProcessor {
 			particleDesc = new AssetDescriptor<>("particles/test.p", ParticleEffect.class, params);
 		}
 
-		public void updateAllAssets() {
+		public void updateAllAssets (String type) {
 			IntBag entities = getSubscription().getEntities();
 			for (int id = 0; id < entities.size(); id++) {
-				updateAsset(entities.get(id));
+				updateAsset(entities.get(id), type);
 			}
 		}
 
 		@Override protected void inserted (int entityId) {
-			updateAsset(entityId);
+			updateAsset(entityId, "");
 		}
 
-		private void updateAsset (int entityId) {
+		private void updateAsset (int entityId, String type) {
 			if (atlas == null) return;
 			Asset asset = mAsset.get(entityId);
 			Renderer.Renderable renderable = mRenderable.create(entityId);
 			renderable.type = asset.type;
-			if (asset.type == ParticleEffect.class) {
+			if (asset.type == ParticleEffect.class && !type.contains("atlas")) {
 				renderable.effect = new ParticleEffect(effect);
-			} else if (asset.type == TextureRegion.class) {
+			} else if (asset.type == TextureRegion.class && !type.contains("particle")) {
 				renderable.region = atlas.findRegion(asset.path);
 			}
 		}
@@ -138,25 +135,51 @@ public class AssetsGame extends ApplicationAdapter implements InputProcessor {
 		}
 
 		private TextureAtlas atlas;
-		@Override public void assetsProcessed () {
+		@Override public void assetsProcessed (final String type) {
 			if (loadInProgress) throw new AssertionError("Asset reload before old ones loaded!");
+			Gdx.app.log(TAG, "Processing " + type);
 			loadInProgress = true;
-			assetManager.load(atlasDescriptor);
-			assetManager.load(particleDesc);
-			assetManager.listener = new AssetManagers.Listener() {
-				@Override public void onReload (Array<AssetDescriptor> reloaded) {
-					atlas = assetManager.get(atlasDescriptor);
-					effect = assetManager.get(particleDesc);
-					ParticleEmitter first = effect.getEmitters().first();
-					first.setContinuous(true);
-					first.getScale().setHigh(24, 48);
-					first.getScale().setLow(8, 16);
-					first.getVelocity().setHigh(64, 128);
-					first.getVelocity().setLow(48, 96);
-					first.setAdditive(true);
-					updateAllAssets();
-				}
-			};
+			if (type.equals("atlas")) {
+				assetManager.load(atlasDescriptor);
+				assetManager.listener = new AssetManagers.Listener() {
+					@Override public void onReload (Array<AssetDescriptor> reloaded) {
+						atlas = assetManager.get(atlasDescriptor);
+						updateAllAssets(type);
+					}
+				};
+			} else if (type.equals("particle")) {
+				assetManager.load(particleDesc);
+				assetManager.listener = new AssetManagers.Listener() {
+					@Override public void onReload (Array<AssetDescriptor> reloaded) {
+						effect = assetManager.get(particleDesc);
+						ParticleEmitter first = effect.getEmitters().first();
+						first.setContinuous(true);
+						first.getScale().setHigh(24, 48);
+						first.getScale().setLow(8, 16);
+						first.getVelocity().setHigh(64, 128);
+						first.getVelocity().setLow(48, 96);
+						first.setAdditive(true);
+						updateAllAssets(type);
+					}
+				};
+			} else {
+				assetManager.load(atlasDescriptor);
+				assetManager.load(particleDesc);
+				assetManager.listener = new AssetManagers.Listener() {
+					@Override public void onReload (Array<AssetDescriptor> reloaded) {
+						atlas = assetManager.get(atlasDescriptor);
+						effect = assetManager.get(particleDesc);
+						ParticleEmitter first = effect.getEmitters().first();
+						first.setContinuous(true);
+						first.getScale().setHigh(24, 48);
+						first.getScale().setLow(8, 16);
+						first.getVelocity().setHigh(64, 128);
+						first.getVelocity().setLow(48, 96);
+						first.setAdditive(true);
+						updateAllAssets(type);
+					}
+				};
+			}
 		}
 
 		public static class Asset extends Component {

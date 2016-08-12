@@ -18,11 +18,11 @@ public class AndroidLauncher extends AndroidApplication {
 
 		}
 
-		@Override public void processAssets () {
+		@Override public void processAssets (String type) {
 
 		}
 
-		@Override public void processAssetsAsync () {
+		@Override public void processAssetsAsync (String particle) {
 
 		}
 

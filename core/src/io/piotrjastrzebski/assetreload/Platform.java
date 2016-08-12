@@ -5,11 +5,11 @@ package io.piotrjastrzebski.assetreload;
  */
 public interface Platform {
 	void start(Listener listener, boolean watch);
-	void processAssets();
-	void processAssetsAsync();
+	void processAssets (String type);
+	void processAssetsAsync (String particle);
 
 	void dispose();
 	interface Listener {
-		void assetsProcessed();
+		void assetsProcessed (String type);
 	}
 }
